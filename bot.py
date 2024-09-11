@@ -1,14 +1,24 @@
 import discord
 from gamble import Gamble
 import logging
+from connector import Connector
+
+DATA_TABLE = 'data'
 
 class GambaBot(discord.Bot):
 
-    def __init__(self, datafile: str):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._prepare_logger()
-        self._cache: dict[str, Gamble] = {}
-        self._load_data(datafile)
+        self._dbconn = Connector()
+        if not self._dbconn.check_table_exists(DATA_TABLE):
+            self._dbconn.create_table(DATA_TABLE)
+
+    def handle_gamble(self, *args):
+
+        gamble = Gamble(*args)
+        self._dbconn.save_gamble(DATA_TABLE, gamble)
+        
 
     def _prepare_logger(self):
         '''Prepares a logger for the bot.'''
@@ -19,24 +29,6 @@ class GambaBot(discord.Bot):
         handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
         logger.addHandler(handler)
         self._logger = logger
-
-    def _load_data(self, filepath: str):
-        '''Build's the bot's cache from the transaction log.'''
-        
-        self._logger.log(logging.INFO, f"Loading data from {filepath}")
-        with open(filepath, 'r') as file:
-            transactions = file.readlines()
-            for transaction in transactions:
-                gamble = Gamble.from_transaction(transaction)
-                self._apply_gamble(gamble)
-    
-    def _apply_gamble(self, gamble: Gamble):
-        '''Applies a gamble's values to the internal cache.'''
-
-        if not gamble.user in self._cache.keys():
-            self._cache[gamble.user] = gamble
-        else:
-            self._cache[gamble.user] += gamble
 
 
 if __name__ == "__main__":

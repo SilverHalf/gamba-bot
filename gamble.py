@@ -8,10 +8,10 @@ class Gamble:
     '''
     def __init__(self,
             user: str,
-            hands: int, 
-            gold: int, 
-            ectos: int, 
-            runes: int,
+            hands: int = 0, 
+            gold: int = 0, 
+            ectos: int = 0,
+            runes: int = 0,
             timestamp: float | None = None):
         '''
         Creates a new gamble session object with the specified results.
@@ -25,25 +25,6 @@ class Gamble:
         self.gold = gold
         self.ectos = ectos
         self.runes = runes
-
-    @classmethod
-    def from_transaction(cls, json_str: dict[str, int | str]):
-        '''Creates a Gamble object from a json string.'''
-
-        dictionary = json.loads(json_str)
-
-        return cls(
-            dictionary['user'],
-            dictionary['hands'],
-            dictionary['gold'],
-            dictionary['ectos'],
-            dictionary['runes'],
-            dictionary['timestamp']
-        )
-
-    def save(self, filepath: str) -> None:
-        with open(filepath, 'a') as datafile:
-            datafile.write(str(self) + "\n")
 
     def __iadd__(self, other: Self):
         
