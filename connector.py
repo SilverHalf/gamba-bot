@@ -113,7 +113,8 @@ class Connector:
         return None
         
 if __name__ == "__main__":
-    conn = Connector("test.db")
-    data = conn.all_user_totals('testguild')
-    for g in data:
-        print(g)
+    conn = Connector("gambadata.db")
+    conn._run_query('DROP TABLE data')
+    # data = conn.all_user_totals('testguild')
+    # for g in data:
+    #     print(g)
