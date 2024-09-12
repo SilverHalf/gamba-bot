@@ -3,7 +3,7 @@ import os
 from gamble import Gamble
 from functools import wraps
 
-def query(f):
+def simple_query(f):
     '''
     Decorator for simple functions consisting in a single
     query that doesn't need to return results.
@@ -17,15 +17,46 @@ def query(f):
     
     return wrapper
 
+def gamble_query(f):
+    '''
+    Decorator for queries meant to build gamble objects.
+    The query should build a set of rows, each one with the
+    required data to build a Gamble object.
+    This decorator will then build the object for each row
+    and return all results as a list.
+    '''
+    @wraps(f)
+    def wrapper(*args):
+        conn = args[0]
+        assert isinstance(conn, Connector)
+        query = f(*args)
+        gambles = []
+        rows = conn._run_query(query)
+        for row in rows:
+            gambles.append(Gamble(*row))
+
+        return gambles
+    
+    return wrapper
+
 class Connector:
+    '''
+    Interface for the gambling sqlite database, which specifies
+    several default queries and convenience functions.
+    '''
 
     def __init__(self, dbfile: str = 'gambadata.db'):
+        '''
+        Creates a new Connector. The connector will automatically use the
+        specified `dbfile` sqlite database, creating the file if it
+        doesn't already exist.
+        '''
 
         filepath = os.path.join(os.path.dirname(__file__), dbfile)
         self._connection = sqlite3.connect(filepath)
         self._connection.autocommit = True
 
-    @query
+    @simple_query
     def save_gamble(self, table: str, gamble: Gamble):
         '''Saves a gamble as a row in the specified table.'''
 
@@ -34,10 +65,30 @@ class Connector:
             (\'{gamble.user}\', {gamble.hands}, {gamble.gold}, {gamble.ectos}, {gamble.runes}, {gamble.timestamp})
         """
 
-    @query
+    @simple_query
     def create_table(self, tablename: str):
+        '''Creates a new table in the gambling database.'''
         
         return f"CREATE TABLE {tablename}(player, gambles, gold, ectos, runes, timestamp)"
+    
+    @gamble_query
+    def user_totals(self, tablename: str, username: str) -> list[Gamble]:
+        '''Gets the sum data for a user within a table.'''
+
+        return f'''
+            SELECT player, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
+            FROM {tablename}
+            WHERE player='{username}'
+        '''
+    
+    @gamble_query
+    def all_user_totals(self, tablename: str) -> list[Gamble]:
+
+        return f'''
+            SELECT player, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
+            FROM {tablename}
+            GROUP BY player
+        '''
 
     def check_table_exists(self, tablename: str) -> bool:
 
@@ -63,9 +114,6 @@ class Connector:
         
 if __name__ == "__main__":
     conn = Connector("test.db")
-    print(conn.check_table_exists('testguild'))
-    conn.create_table("testguild")
-    gam = Gamble("testuser")
-    conn.save_gamble('testguild', gam)
-    input("Press enter to conclude")
-    conn._run_query("DROP TABLE testguild")
+    data = conn.all_user_totals('testguild')
+    for g in data:
+        print(g)

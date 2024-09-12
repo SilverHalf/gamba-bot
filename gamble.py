@@ -1,6 +1,10 @@
+'''
+This module defines the general data structure and behaviour for Gambles.
+'''
+
 import time
 import json
-from typing import Self
+from gw2_api import get_item_value, Item
 
 class Gamble:
     '''
@@ -14,7 +18,14 @@ class Gamble:
             runes: int = 0,
             timestamp: float | None = None):
         '''
-        Creates a new gamble session object with the specified results.
+        Creates a new gamble session object with the given data.
+
+        - `user` - username of the gambler
+        - `hands` - number of gambles done by the user in the session.
+        - `gold` - gross total raw gold gained during the session.
+        - `ectos` - gross total ectos gained during the session.
+        - `runes` - total number of superior runes of holding won.
+        - `timestamp` - float, number of seconds in unix time.
         '''
         if timestamp is not None:
             self.timestamp = timestamp
@@ -26,17 +37,18 @@ class Gamble:
         self.ectos = ectos
         self.runes = runes
 
-    def __iadd__(self, other: Self):
-        
-        self.hands += other.hands
-        self.gold += other.gold
-        self.ectos += other.ectos
-        self.runes += other.runes
+    @property
+    def value(self):
+        '''Net total and average value of the gamble.'''
 
-        if other.timestamp > self.timestamp:
-            self.timestamp = other.timestamp
+        ecto_value = get_item_value(Item.ectoplasm)
+        rune_value = get_item_value(Item.rune)
 
-        return self
+        spent = self.hands*(100 + 250 * ecto_value)
+        gained = self.gold + self.ectos * ecto_value + self.runes * rune_value
+        value = gained - spent
+
+        return value, value/self.hands
 
     def __str__(self) -> str:
         '''Converts the Gamble data to a json string.'''
@@ -50,3 +62,7 @@ class Gamble:
             'runes':self.runes
         }
         return json.dumps(data_dict)
+
+if __name__ == "__main__":
+    g = Gamble('silver', 2, 200, 650, 1)
+    print(g.value)
