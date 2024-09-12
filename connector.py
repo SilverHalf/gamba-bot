@@ -54,7 +54,6 @@ class Connector:
 
         filepath = os.path.join(os.path.dirname(__file__), dbfile)
         self._connection = sqlite3.connect(filepath)
-        self._connection.autocommit = True
 
     @simple_query
     def save_gamble(self, table: str, gamble: Gamble):
@@ -107,6 +106,7 @@ class Connector:
         if get_result:
             result = result.fetchall()
         cursor.close()
+        self._connection.commit()
 
         if get_result:
             return result
