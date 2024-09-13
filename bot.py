@@ -4,6 +4,9 @@ import logging
 from connector import Connector
 
 DATA_TABLE = 'data'
+GOLD_ICON = '<:gold:1284129171022286848>'
+ECTO_ICON = '<:ecto:1284129080731635754>'
+RUNE_ICON = '<:r_o_h:1284131395492646985>'
 
 class GambaBot(discord.Bot):
 
@@ -14,37 +17,55 @@ class GambaBot(discord.Bot):
         if not self._dbconn.check_table_exists(DATA_TABLE):
             self._dbconn.create_table(DATA_TABLE)
 
-    def handle_gamble(self, author: discord.user.User, *values: tuple[int]):
+    def handle_gamble(self, author: discord.user.User, *values: tuple[int]) -> Gamble:
         '''Saves a gamble to the local database, and returns an appropriate message.'''
 
         g = Gamble(author.name, *values)
         self._dbconn.save_gamble(DATA_TABLE, g)
-        gold = round(g.gold, 2)
-        ectos = round(g.ectos, 2)
-        runes = round(g.runes, 2)
-
-        userid = author.id
-        msg = f"<@{userid}> gambled {g.hands} times, winning {gold}💰, {ectos}🔮, and {runes}🀄."
-        total, average = g.value
-        state = 'won' if total >= 0 else 'lost'
-        msg += f"\nIn total, they {state} **{round(abs(total), 2)}**💰, or {round(abs(average), 2)} on average."
-
-        return msg
+        return g
     
-    def get_user_stats(self, author: discord.user.User):
+    def get_user_stats(self, author: discord.user.User) -> Gamble:
         '''Gets overall statistics for a user, and returns a formatted message.'''
 
         g = self._dbconn.user_totals(DATA_TABLE, author.name)[0]
-        userid = author.id
-        gold = round(g.gold, 2)
-        ectos = round(g.ectos, 2)
-        runes = round(g.runes, 2)
-        msg = f"<@{userid}> has gambled a total of {g.hands} times, winning {gold}💰, {ectos}🔮, and {runes}🀄."
-        total, average = g.value
-        state = 'won' if total >= 0 else 'lost'
-        msg += f"\nOverall, they {state} **{round(abs(total), 2)}**💰, or {round(abs(average), 2)} on average."
+        return g
 
-        return msg
+    def create_gamble_embed(self,
+            g: Gamble,
+            author: discord.User,
+            image_url: str | None = None,
+            is_summary: bool = False) -> discord.Embed:
+
+        title = "Gambling Report" if is_summary is False else "User Stats"
+        description = f"<@{author.id}> gambled **{g.hands}** times, with the following results."
+        embed = discord.Embed(title=title, description=description)
+
+        # Creating feedback on resources spent
+        gold_spent = g.hands * 100
+        ecto_spent = g.hands * 250
+        embed.add_field(name="Total Spent:",
+            value=f"{gold_spent} {GOLD_ICON}\n{ecto_spent} {ECTO_ICON}",
+            inline=True)
+        
+        # Creating feedback on resources gained
+        msg = f"{g.gold} {GOLD_ICON}\n{g.ectos} {ECTO_ICON}"
+        if g.runes > 0:
+            msg += f'\n{g.runes} {RUNE_ICON}'
+        embed.add_field(name="Total Won:",
+            value=msg,
+            inline=True)
+        
+        total, average = g.value
+        state = 'gained' if total >= 0 else 'lost'
+        msg = f"\nOverall, they {state} **{round(abs(total), 2)}** {GOLD_ICON}, or {round(abs(average), 2)} {GOLD_ICON} on average."
+        embed.add_field(name='',
+            value=msg,
+            inline=False)
+        
+        if not is_summary:
+            embed.set_image(url=image_url)
+
+        return embed
 
     def _prepare_logger(self):
         '''Prepares a logger for the bot.'''
@@ -80,12 +101,11 @@ class GambaModal(discord.ui.Modal):
         self.add_item(discord.ui.InputText(
             label="Ectos",
             style=discord.InputTextStyle.short,
-            placeholder="How many Globs of Ectoplasm did you win>"))
+            placeholder="How many Globs of Ectoplasm has you win>"))
         self.add_item(discord.ui.InputText(
             label="Runes",
             style=discord.InputTextStyle.short,
-            placeholder="How many Runes of Holding did you win?",
-            value='0'))
+            placeholder="How many Supreme Runes of Holding did you win?",))
     
     @property
     def values(self) -> tuple[int] | None:
@@ -111,6 +131,6 @@ class GambaModal(discord.ui.Modal):
         if values is None:
             await interaction.response.send_message("Invalid content. Fields must be integers.")
             return
-        msg = self.bot.handle_gamble(interaction.user, *self.values)
-        msg += f"\n{self.img_url}"
-        await interaction.response.send_message(msg)
+        g = self.bot.handle_gamble(interaction.user, *self.values)
+        embed = self.bot.create_gamble_embed(g, interaction.user, image_url=self.img_url)
+        await interaction.response.send_message(embed=embed)

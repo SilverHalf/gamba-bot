@@ -21,7 +21,8 @@ async def record(ctx: discord.ApplicationContext, proof_image: discord.message.A
 @gamba.command(description="Gets your overall gamba statistics")
 async def stats(ctx: discord.ApplicationContext):
     author = ctx.author
-    msg = bot.get_user_stats(author)
-    await ctx.respond(msg)
+    g = bot.get_user_stats(author)
+    embed = bot.create_gamble_embed(g, author, is_summary=True)
+    await ctx.respond(embed=embed)
 
 bot.run(bot_token)
