@@ -55,6 +55,16 @@ class GambaBot(discord.Bot):
             value=msg,
             inline=True)
         
+        # Creating feedback on difference
+        gold_diff = g.gold - gold_spent
+        ecto_diff = g.ectos - ecto_spent
+        msg = f"{gold_diff} {GOLD_ICON}\n{ecto_diff} {ECTO_ICON}"
+        if g.runes > 0:
+            msg += f'\n{g.runes} {RUNE_ICON}'
+        embed.add_field(name="Net winnings:",
+            value=msg,
+            inline=True)
+        
         total, average = g.value
         state = 'gained' if total >= 0 else 'lost'
         msg = f"\nOverall, they {state} **{round(abs(total), 2)}** {GOLD_ICON}, or {round(abs(average), 2)} {GOLD_ICON} on average."
