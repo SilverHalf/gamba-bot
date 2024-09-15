@@ -4,7 +4,9 @@ This module defines the general data structure and behaviour for Gambles.
 
 import time
 import json
-from gw2_api import get_item_value, Item
+from gw2_api import API, ItemType
+import logging
+import sys
 
 class Gamble:
     '''
@@ -37,18 +39,17 @@ class Gamble:
         self.ectos = ectos
         self.runes = runes
 
-    @property
-    def value(self):
+    def get_value(self, api: API):
         '''Net total and average value of the gamble.'''
 
-        ecto_value = get_item_value(Item.ectoplasm)
-        rune_value = get_item_value(Item.rune)
+        ecto_value = api.get_item_value(ItemType.ectoplasm)
+        rune_value = api.get_item_value(ItemType.rune)
 
         spent = self.hands*(100 + 250 * ecto_value)
         gained = self.gold + self.ectos * ecto_value + self.runes * rune_value
-        value = gained - spent
+        value = (gained - spent)/10000
 
-        return value, value/self.hands
+        return round(value, 2), round(value/self.hands, 2)
 
     def __str__(self) -> str:
         '''Converts the Gamble data to a json string.'''
@@ -64,5 +65,13 @@ class Gamble:
         return json.dumps(data_dict)
 
 if __name__ == "__main__":
+    logger = logging.Logger('testLogger', logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    api = API(logger)
     g = Gamble('silver', 2, 200, 650, 1)
-    print(g.value)
+    print(g.get_value(api))

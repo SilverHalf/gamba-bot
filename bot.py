@@ -2,6 +2,7 @@ import discord
 from gamble import Gamble
 import logging
 from connector import Connector
+from gw2_api import API
 
 DATA_TABLE = 'data'
 GOLD_ICON = '<:gold:1284129171022286848>'
@@ -14,6 +15,7 @@ class GambaBot(discord.Bot):
         super().__init__(**kwargs)
         self._prepare_logger()
         self._dbconn = Connector()
+        self._api = API(logger=self._logger)
         if not self._dbconn.check_table_exists(DATA_TABLE):
             self._dbconn.create_table(DATA_TABLE)
 
@@ -65,7 +67,7 @@ class GambaBot(discord.Bot):
             value=msg,
             inline=True)
         
-        total, average = g.value
+        total, average = g.get_value(self._api)
         state = 'gained' if total >= 0 else 'lost'
         msg = f"\nOverall, they {state} **{round(abs(total), 2)}** {GOLD_ICON}, or {round(abs(average), 2)} {GOLD_ICON} on average."
         embed.add_field(name='',
