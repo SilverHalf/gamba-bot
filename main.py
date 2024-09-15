@@ -31,7 +31,7 @@ async def winners(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed)
 
 @gamba.command(description="Gets the leaderboard for top losers.")
-async def winners(ctx: discord.ApplicationContext):
+async def losers(ctx: discord.ApplicationContext):
     embed = bot.create_leaderboard(n = 10, winners=False)
     await ctx.respond(embed=embed)
 
