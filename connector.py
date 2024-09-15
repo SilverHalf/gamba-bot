@@ -71,13 +71,13 @@ class Connector:
         return f"CREATE TABLE {tablename}(player, gambles, gold, ectos, runes, timestamp)"
     
     @gamble_query
-    def user_totals(self, tablename: str, userid: str) -> list[Gamble]:
+    def user_totals(self, tablename: str, userid: int) -> list[Gamble]:
         '''Gets the sum data for a user within a table.'''
 
         return f'''
             SELECT player, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
             FROM {tablename}
-            WHERE player='{userid}'
+            WHERE player={userid}
         '''
     
     @gamble_query
