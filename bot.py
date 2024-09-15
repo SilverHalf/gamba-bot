@@ -28,10 +28,19 @@ class GambaBot(discord.Bot):
         return g
     
     def get_user_stats(self, author: discord.user.User) -> Gamble:
-        '''Gets overall statistics for a user, and returns a formatted message.'''
+        '''Gets overall statistics for a user.'''
 
         g = self._dbconn.user_totals(DATA_TABLE, author.id)[0]
         return g
+    
+    def get_total_stats(self) -> discord.Embed:
+        '''Gets overall statistics for all users.'''
+
+        g = self._dbconn.bot_totals(DATA_TABLE)[0]
+        g.user = 'placeholder'
+        embed = self.create_gamble_embed(g, is_summary=True)
+        embed.description = f"Gamba-Bot has registered a total of {g.hands} gambles."
+        return embed
 
     def create_gamble_embed(self,
             g: Gamble,
@@ -39,13 +48,13 @@ class GambaBot(discord.Bot):
             is_summary: bool = False) -> discord.Embed:
 
         title = "Gambling Report" if is_summary is False else "User Stats"
-        description = f"<@{g.user}> gambled **{g.hands}** times, with the following results."
+        description = f"<@{g.user}> gambled **{g.hands}** times."
         embed = discord.Embed(title=title, description=description)
 
         # Creating feedback on resources spent
         gold_spent = g.hands * 100
         ecto_spent = g.hands * 250
-        embed.add_field(name="Total Spent:",
+        embed.add_field(name="Spent:",
             value=f"{gold_spent} {GOLD_ICON}\n{ecto_spent} {ECTO_ICON}",
             inline=True)
         
@@ -53,7 +62,7 @@ class GambaBot(discord.Bot):
         msg = f"{g.gold} {GOLD_ICON}\n{g.ectos} {ECTO_ICON}"
         if g.runes > 0:
             msg += f'\n{g.runes} {RUNE_ICON}'
-        embed.add_field(name="Total Won:",
+        embed.add_field(name="Won:",
             value=msg,
             inline=True)
         
@@ -63,13 +72,13 @@ class GambaBot(discord.Bot):
         msg = f"{gold_diff} {GOLD_ICON}\n{ecto_diff} {ECTO_ICON}"
         if g.runes > 0:
             msg += f'\n{g.runes} {RUNE_ICON}'
-        embed.add_field(name="Net winnings:",
+        embed.add_field(name="Profit:",
             value=msg,
             inline=True)
         
         total, average = g.get_value(self._api)
-        state = 'gained' if total >= 0 else 'lost'
-        msg = f"\nOverall, they {state} **{round(abs(total), 2)}** {GOLD_ICON}, or {round(abs(average), 2)} {GOLD_ICON} on average."
+        state = 'gain' if total >= 0 else 'loss'
+        msg = f"\nFor a total **{state}** of **{round(abs(total), 2)}** {GOLD_ICON}, or {round(abs(average), 2)} {GOLD_ICON} on average, at current prices."
         embed.add_field(name='',
             value=msg,
             inline=False)
@@ -87,7 +96,7 @@ class GambaBot(discord.Bot):
         '''
 
         users = self._dbconn.all_user_totals(DATA_TABLE)
-        title = f"Gambling Leaderboard: {'Winners' if winners else 'Losers'}"
+        title = f"{'Winners' if winners else 'Losers'} Leaderboard"
         embed = discord.Embed(title=title)
 
         n = min(n, len(users))
@@ -99,14 +108,14 @@ class GambaBot(discord.Bot):
         for i in range(n):
             userdata = top_total[i]
             value = userdata._value[0]
-            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} {abs(value)} {GOLD_ICON} total over {userdata.hands} gambles."
+            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} total over {userdata.hands} gambles."
             totals_lb.append(row)
 
         average_lb: list[str] = []
         for i in range(n):
             userdata = top_average[i]
             value = userdata._value[1]
-            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} {abs(value)} {GOLD_ICON} on average over {userdata.hands} gambles."
+            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} on average over {userdata.hands} gambles."
             average_lb.append(row)
 
         embed.add_field(

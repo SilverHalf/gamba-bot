@@ -27,12 +27,17 @@ async def stats(ctx: discord.ApplicationContext):
 
 @gamba.command(description="Gets the leaderboard for top winners.")
 async def winners(ctx: discord.ApplicationContext):
-    embed = bot.create_leaderboard(n = 10, winners=True)
+    embed = bot.create_leaderboard(n = 5, winners=True)
     await ctx.respond(embed=embed)
 
 @gamba.command(description="Gets the leaderboard for top losers.")
 async def losers(ctx: discord.ApplicationContext):
-    embed = bot.create_leaderboard(n = 10, winners=False)
+    embed = bot.create_leaderboard(n = 5, winners=False)
+    await ctx.respond(embed=embed)
+
+@gamba.command(description="Gets total stats for Gamba-Bot.")
+async def total(ctx: discord.ApplicationContext):
+    embed = bot.get_total_stats()
     await ctx.respond(embed=embed)
 
 bot.run(bot_token)

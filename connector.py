@@ -79,6 +79,14 @@ class Connector:
             FROM {tablename}
             WHERE player={userid}
         '''
+    @gamble_query
+    def bot_totals(self, tablename: str) -> list[Gamble]:
+        '''Gets the sum data for all users within a table.'''
+
+        return f'''
+            SELECT null, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
+            FROM {tablename}
+        '''
     
     @gamble_query
     def all_user_totals(self, tablename: str) -> list[Gamble]:
