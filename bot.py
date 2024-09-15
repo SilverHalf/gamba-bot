@@ -39,6 +39,7 @@ class GambaBot(discord.Bot):
         g = self._dbconn.bot_totals(DATA_TABLE)[0]
         g.user = 'placeholder'
         embed = self.create_gamble_embed(g, is_summary=True)
+        embed.title = "Total Stats"
         embed.description = f"Gamba-Bot has registered a total of {g.hands} gambles."
         return embed
 
