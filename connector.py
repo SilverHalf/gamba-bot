@@ -61,7 +61,7 @@ class Connector:
 
         return f"""
         INSERT INTO {table} VALUES
-            (\'{gamble.user}\', {gamble.hands}, {gamble.gold}, {gamble.ectos}, {gamble.runes}, {gamble.timestamp})
+            ({gamble.user}, {gamble.hands}, {gamble.gold}, {gamble.ectos}, {gamble.runes}, {gamble.timestamp})
         """
 
     @simple_query
