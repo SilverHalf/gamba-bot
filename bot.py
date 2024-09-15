@@ -16,7 +16,7 @@ class GambaBot(discord.Bot):
         super().__init__(**kwargs)
         self._prepare_logger()
         self._dbconn = Connector()
-        self._api = API(logger=self._logger)
+        self._api = API()
         if not self._dbconn.check_table_exists(DATA_TABLE):
             self._dbconn.create_table(DATA_TABLE)
 

@@ -51,7 +51,7 @@ class Gamble:
 
         spent = self.hands*(100 + 250 * ecto_value)
         gained = self.gold + self.ectos * ecto_value + self.runes * rune_value
-        value = (gained - spent)/10000
+        value = gained - spent
 
         self._value = (round(value, 2), round(value/self.hands, 2))
         return self._value
@@ -78,5 +78,5 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
     api = API(logger)
-    g = Gamble('silver', 2, 200, 650, 1)
+    g = Gamble('silver', 1, 25, 300, 0)
     print(g.get_value(api))
