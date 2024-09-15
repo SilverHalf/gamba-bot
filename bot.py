@@ -22,24 +22,33 @@ class GambaBot(discord.Bot):
     def handle_gamble(self, author: discord.user.User, *values: tuple[int]) -> Gamble:
         '''Saves a gamble to the local database, and returns an appropriate message.'''
 
-        g = Gamble(author.name, *values)
+        g = Gamble(author.id, *values)
         self._dbconn.save_gamble(DATA_TABLE, g)
         return g
     
     def get_user_stats(self, author: discord.user.User) -> Gamble:
         '''Gets overall statistics for a user, and returns a formatted message.'''
 
-        g = self._dbconn.user_totals(DATA_TABLE, author.name)[0]
+        g = self._dbconn.user_totals(DATA_TABLE, author.id)[0]
         return g
+    
+    def get_all_users_sorted(self, descending: bool = False):
+
+        users_total = self._dbconn.all_user_totals()
+        assert isinstance(users_total, list)
+
+        users_total.sort(reverse=descending, key=lambda x: x.get_value(self._api)[0])
+        users_average = sorted(reverse=descending, key= lambda x: x.get_value(self._api)[1])
+
+        return users_total, users_average
 
     def create_gamble_embed(self,
             g: Gamble,
-            author: discord.User,
             image_url: str | None = None,
             is_summary: bool = False) -> discord.Embed:
 
         title = "Gambling Report" if is_summary is False else "User Stats"
-        description = f"<@{author.id}> gambled **{g.hands}** times, with the following results."
+        description = f"<@{g.user}> gambled **{g.hands}** times, with the following results."
         embed = discord.Embed(title=title, description=description)
 
         # Creating feedback on resources spent
@@ -144,5 +153,5 @@ class GambaModal(discord.ui.Modal):
             await interaction.response.send_message("Invalid content. Fields must be integers.")
             return
         g = self.bot.handle_gamble(interaction.user, *self.values)
-        embed = self.bot.create_gamble_embed(g, interaction.user, image_url=self.img_url)
+        embed = self.bot.create_gamble_embed(g, image_url=self.img_url)
         await interaction.response.send_message(embed=embed)

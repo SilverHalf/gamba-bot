@@ -38,9 +38,13 @@ class Gamble:
         self.gold = gold
         self.ectos = ectos
         self.runes = runes
+        self._value: tuple[float] | None = None
 
     def get_value(self, api: API):
         '''Net total and average value of the gamble.'''
+
+        if self._value is not None:
+            return self._value
 
         ecto_value = api.get_item_value(ItemType.ectoplasm)
         rune_value = api.get_item_value(ItemType.rune)
@@ -49,7 +53,8 @@ class Gamble:
         gained = self.gold + self.ectos * ecto_value + self.runes * rune_value
         value = (gained - spent)/10000
 
-        return round(value, 2), round(value/self.hands, 2)
+        self._value = (round(value, 2), round(value/self.hands, 2))
+        return self._value
 
     def __str__(self) -> str:
         '''Converts the Gamble data to a json string.'''
