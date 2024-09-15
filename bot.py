@@ -3,6 +3,7 @@ from gamble import Gamble
 import logging
 from connector import Connector
 from gw2_api import API
+from heapq import nlargest, nsmallest
 
 DATA_TABLE = 'data'
 GOLD_ICON = '<:gold:1284129171022286848>'
@@ -31,16 +32,6 @@ class GambaBot(discord.Bot):
 
         g = self._dbconn.user_totals(DATA_TABLE, author.id)[0]
         return g
-    
-    def get_all_users_sorted(self, descending: bool = False):
-
-        users_total = self._dbconn.all_user_totals()
-        assert isinstance(users_total, list)
-
-        users_total.sort(reverse=descending, key=lambda x: x.get_value(self._api)[0])
-        users_average = sorted(reverse=descending, key= lambda x: x.get_value(self._api)[1])
-
-        return users_total, users_average
 
     def create_gamble_embed(self,
             g: Gamble,
@@ -87,6 +78,49 @@ class GambaBot(discord.Bot):
             embed.set_image(url=image_url)
 
         return embed
+    
+    def create_leaderboard(self, n = 10, winners: bool = False) -> discord.Embed:
+        '''
+        Returns an Embed containing leaderboards for gambling stats.
+        - `n` - number of positions on the leaderboard.
+        - `winners` - if true, shows the top wins. Otherwise shows the top losses.
+        '''
+
+        users = self._dbconn.all_user_totals(DATA_TABLE)
+        title = f"Gambling Leaderboard: {'Winners' if winners else 'Losers'}"
+        embed = discord.Embed(title=title)
+
+        n = min(n, len(users))
+        fun = nlargest if winners else nsmallest
+        top_total   = fun(n, users, key=lambda x: x.get_value(self._api)[0])
+        top_average = fun(n, users, key=lambda x: x.get_value(self._api)[1])
+
+        totals_lb: list[str] = []
+        for i in range(n):
+            userdata = top_total[i]
+            value = userdata._value[0]
+            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} {abs(value)} {GOLD_ICON} total over {userdata.hands} gambles."
+            totals_lb.append(row)
+
+        average_lb: list[str] = []
+        for i in range(n):
+            userdata = top_average[i]
+            value = userdata._value[1]
+            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} {abs(value)} {GOLD_ICON} on average over {userdata.hands} gambles."
+            average_lb.append(row)
+
+        embed.add_field(
+            name=f"Biggest {'Winners' if winners else 'Losers'}",
+            value="\n".join(totals_lb),
+            inline=False
+        )
+        embed.add_field(
+            name=f"{'Luckiest' if winners else 'Unluckiest'} Gamblers",
+            value="\n".join(average_lb),
+            inline=False
+        )
+
+        return embed        
 
     def _prepare_logger(self):
         '''Prepares a logger for the bot.'''

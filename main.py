@@ -18,11 +18,21 @@ async def record(ctx: discord.ApplicationContext, proof_image: discord.message.A
     
     await ctx.send_modal(GambaModal(bot, proof_image.url, title="Gambling Results"))
 
-@gamba.command(description="Gets your overall gamba statistics")
+@gamba.command(description="Gets your overall statistics.")
 async def stats(ctx: discord.ApplicationContext):
     author = ctx.author
     g = bot.get_user_stats(author)
     embed = bot.create_gamble_embed(g, author, is_summary=True)
+    await ctx.respond(embed=embed)
+
+@gamba.command(description="Gets the leaderboard for top winners.")
+async def winners(ctx: discord.ApplicationContext):
+    embed = bot.create_leaderboard(n = 10, winners=True)
+    await ctx.respond(embed=embed)
+
+@gamba.command(description="Gets the leaderboard for top losers.")
+async def winners(ctx: discord.ApplicationContext):
+    embed = bot.create_leaderboard(n = 10, winners=False)
     await ctx.respond(embed=embed)
 
 bot.run(bot_token)

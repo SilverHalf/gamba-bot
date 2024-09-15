@@ -40,7 +40,7 @@ class Gamble:
         self.runes = runes
         self._value: tuple[float] | None = None
 
-    def get_value(self, api: API):
+    def get_value(self, api: API) -> tuple[float]:
         '''Net total and average value of the gamble.'''
 
         if self._value is not None:
