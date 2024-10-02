@@ -3,6 +3,7 @@ from gamble import Gamble
 import logging
 from connector import Connector
 from gw2_api import API
+from typing import Callable
 from heapq import nlargest, nsmallest
 
 DATA_TABLE = 'data'
@@ -110,32 +111,48 @@ class GambaBot(discord.Bot):
         top_total   = fun(n, users, key=lambda x: x.get_value(self._api)[0])
         top_average = fun(n, users, key=lambda x: x.get_value(self._api)[1])
 
-        totals_lb: list[str] = []
-        for i in range(n):
-            userdata = top_total[i]
-            value = userdata._value[0]
-            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} total over {userdata.hands} gambles."
-            totals_lb.append(row)
+        def gamble_total_row(gamble: Gamble) -> str:
+            value = gamble._value[0]
+            return f"<@{gamble.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} total over {gamble.hands} gambles."
 
-        average_lb: list[str] = []
-        for i in range(n):
-            userdata = top_average[i]
-            value = userdata._value[1]
-            row = f"{i+1}. <@{userdata.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} on average over {userdata.hands} gambles."
-            average_lb.append(row)
+        def gamble_average_row(gamble: Gamble) -> str:
+            value = gamble._value[1]
+            return f"<@{gamble.user}> {'won' if value > 0 else 'lost'} **{abs(value)}** {GOLD_ICON} on average over {gamble.hands} gambles."
 
-        embed.add_field(
-            name=f"Biggest {'Winners' if winners else 'Losers'}",
-            value="\n".join(totals_lb),
-            inline=False
-        )
-        embed.add_field(
-            name=f"{'Luckiest' if winners else 'Unluckiest'} Gamblers",
-            value="\n".join(average_lb),
-            inline=False
+        embed = self._add_list_of_gambles(
+            embed,
+            top_total,
+            f"Biggest {'Winners' if winners else 'Losers'}",
+            gamble_total_row
         )
 
-        return embed        
+        embed = self._add_list_of_gambles(
+            embed,
+            top_average,
+            f"{'Luckiest' if winners else 'Unluckiest'} Gamblers",
+            gamble_average_row
+        )
+
+        return embed
+
+    def _add_list_of_gambles(self, embed: discord.Embed, gambles: list[Gamble], name: str, func: Callable[[Gamble], str]):
+        '''Creates a list of gambles in an embed. The string representing each gamble will be generated
+        using the `func` function passed'''
+
+        rows: list[str] = []
+        i = 0
+        for gamble in gambles:
+            i += 1
+            row = f"{i}. {func(gamble)}"
+            rows.append(row)
+
+        embed.add_field(
+            name=name,
+            value="\n".join(rows),
+            inline=False
+        )
+
+        return embed
 
     def _prepare_logger(self):
         '''Prepares a logger for the bot.'''

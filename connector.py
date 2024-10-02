@@ -107,6 +107,18 @@ class Connector:
             FROM {tablename}
             GROUP BY player
         '''
+    
+    @gamble_query
+    def recent_by_user(self, tablename: str, userid: int, n: int) -> list[Gamble]:
+        '''Gets the n most recent gambles by the user with the given id in the specified table.'''
+
+        return f'''
+            SELECT player, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
+            FROM {tablename}
+            WHERE player={userid}
+            ORDER BY timestamp DESC
+            LIMIT {n}
+        '''
 
     def check_table_exists(self, tablename: str) -> bool:
 

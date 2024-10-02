@@ -1,5 +1,6 @@
 import discord.types
-from bot import GambaBot, GambaModal
+from bot import GambaBot, GambaModal, DATA_TABLE, GOLD_ICON
+from gamble import Gamble
 import discord
 import dotenv
 
@@ -23,6 +24,13 @@ async def stats(ctx: discord.ApplicationContext):
     author = ctx.author
     g = bot.get_user_stats(author)
     embed = bot.create_gamble_embed(g, author, is_summary=True)
+    user_recent = bot._dbconn.recent_by_user(DATA_TABLE, author.id, 5)
+    def func(g: Gamble) -> str:
+        value = g.get_value(bot._api)
+        state = 'winning' if value[0] > 0 else 'losing'
+        plural = '' if g.hands == 1 else 's'
+        return f'<t:{int(g.timestamp)}> - gambled {g.hands} time{plural}, {state} a total of {value[0]} {GOLD_ICON}'
+    embed = bot._add_list_of_gambles(embed, user_recent, 'Recent activity:', func)
     await ctx.respond(embed=embed)
 
 @gamba.command(description="Gets the leaderboard for top winners.")
