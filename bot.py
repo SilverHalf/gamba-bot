@@ -33,11 +33,16 @@ class GambaBot(discord.Bot):
         g = self._dbconn.user_totals(DATA_TABLE, author.id)[0]
         return g
     
+    def delete_gamble(self, author: discord.user.User) -> None:
+        '''Deletes the last gamble by an user.'''
+
+        self._dbconn.remove_last_gamble(DATA_TABLE, author.id)
+    
     def get_total_stats(self) -> discord.Embed:
         '''Gets overall statistics for all users.'''
 
         g = self._dbconn.bot_totals(DATA_TABLE)[0]
-        g.user = 'placeholder'
+        g.user = 0
         embed = self.create_gamble_embed(g, is_summary=True)
         embed.title = "Total Stats"
         embed.description = f"Gamba-Bot has registered a total of {g.hands} gambles."

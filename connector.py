@@ -63,6 +63,17 @@ class Connector:
         INSERT INTO {table} VALUES
             ({gamble.user}, {gamble.hands}, {gamble.gold}, {gamble.ectos}, {gamble.runes}, {gamble.timestamp})
         """
+    
+    @simple_query
+    def remove_last_gamble(self, table: str, userid: int):
+        '''Deletes the most recent entry by a user.'''
+
+        return f'''
+        DELETE FROM {table}
+        WHERE player={userid}
+        ORDER BY timestamp DESC
+        LIMIT 1
+        '''
 
     @simple_query
     def create_table(self, tablename: str):
@@ -122,7 +133,6 @@ class Connector:
         
 if __name__ == "__main__":
     conn = Connector("gambadata.db")
-    conn._run_query('DROP TABLE data')
-    # data = conn.all_user_totals('testguild')
-    # for g in data:
-    #     print(g)
+    g = Gamble(1234, 1, 200, 400, 1)
+    conn.save_gamble('data', g)
+    conn.remove_last_gamble('data', 1234)

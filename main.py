@@ -40,4 +40,9 @@ async def total(ctx: discord.ApplicationContext):
     embed = bot.get_total_stats()
     await ctx.respond(embed=embed)
 
+@gamba.command(description="Deletes your most recent gamble.")
+async def delete(ctx: discord.ApplicationContext):
+    bot.delete_gamble(ctx.author)
+    await ctx.respond(f"<@{ctx.author.id}>'s most recent entry has been deleted.")
+
 bot.run(bot_token)
