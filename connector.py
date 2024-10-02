@@ -113,7 +113,7 @@ class Connector:
         '''Gets the n most recent gambles by the user with the given id in the specified table.'''
 
         return f'''
-            SELECT player, SUM(gambles), SUM(gold), SUM(ectos), SUM(runes), MAX(timestamp)
+            SELECT player, gambles, gold, ectos, runes, timestamp
             FROM {tablename}
             WHERE player={userid}
             ORDER BY timestamp DESC
