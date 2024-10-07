@@ -55,7 +55,7 @@ class GambaBot(discord.Bot):
             is_summary: bool = False) -> discord.Embed:
 
         title = "Gambling Report" if is_summary is False else "User Stats"
-        description = f"<@{g.user}> gambled **{g.hands}** times."
+        description = f"<@{g.user}> gambled **{g.hands}** time{'s' if g.hands > 1 else ''}."
         embed = discord.Embed(title=title, description=description)
 
         # Creating feedback on resources spent
